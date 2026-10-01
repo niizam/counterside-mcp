@@ -7,6 +7,7 @@ Mirrors Mod:Side's ``modules/gameplay-jsons``: tables live under
 import json
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 from .config import Roots
@@ -88,7 +89,16 @@ def _walk(root: Path):
 
 
 def list_table_entries(roots: Roots) -> list[TableEntry]:
-    """Every discoverable table, deduped per directory+name with .json preferred."""
+    """Every discoverable table, deduped per directory+name with .json preferred.
+
+    Cached per root set: the walk stats ~11k files, and callers such as field
+    search and object inspection would otherwise repeat it many times over.
+    """
+    return _list_table_entries_cached(roots)
+
+
+@lru_cache(maxsize=8)
+def _list_table_entries_cached(roots: Roots) -> list[TableEntry]:
     found: dict[str, TableEntry] = {}
     for root in roots.table_dirs:
         for file_path in _walk(root):
@@ -145,17 +155,22 @@ def extract_table_records(parsed) -> list:
     return []
 
 
-def read_table_records(roots: Roots, directory: str, file_name: str) -> tuple[list, dict]:
-    """Records plus a small metadata dict. Missing tables return ([], found=False)."""
-    entry = find_table_entry(roots, directory, file_name)
-    if entry is None:
-        return [], {"found": False}
+def records_for_entry(entry: TableEntry) -> list:
+    """Records for an already-discovered entry, without re-walking the roots."""
     parsed = read_table(entry)
     records = extract_table_records(parsed)
     if not records and isinstance(parsed, dict):
         # A decoded table that is a single object describes one record.
         records = [parsed]
-    return records, {"found": True, "entry": table_entry_json(entry)}
+    return records
+
+
+def read_table_records(roots: Roots, directory: str, file_name: str) -> tuple[list, dict]:
+    """Records plus a small metadata dict. Missing tables return ([], found=False)."""
+    entry = find_table_entry(roots, directory, file_name)
+    if entry is None:
+        return [], {"found": False}
+    return records_for_entry(entry), {"found": True, "entry": table_entry_json(entry)}
 
 
 def _collect(value, prefix: str, fields: dict, depth: int) -> None:
