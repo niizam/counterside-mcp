@@ -126,7 +126,7 @@ def health(roots: Roots) -> dict:
     """Describe every root. Never raises: a bad root must be visible, not fatal."""
     asset = _existing(roots.asset_dirs)
     table = _existing(roots.table_dirs)
-    return {
+    report = {
         "revivalRoot": str(roots.revival_root),
         "roots": {
             "asset": {
@@ -146,3 +146,56 @@ def health(roots: Roots) -> dict:
             },
         },
     }
+    warnings = _warnings(roots, asset, table)
+    report["warnings"] = warnings
+    report["ok"] = not warnings
+    return report
+
+
+def _warnings(roots: Roots, asset: Path | None, table: Path | None) -> list[str]:
+    """Point out the configurations that look fine but leave half the data missing.
+
+    The two halves of the data frequently live in different places — the decoded
+    tables in a source checkout, the extracted art in an installed app — so a
+    single base root that resolves is not evidence that everything is reachable.
+    """
+    warnings: list[str] = []
+    if table is None:
+        warnings.append(
+            "No gameplay table root exists. Objects and tables will be empty. Set "
+            "CS_GAMEPLAY_TABLES_DIR to the directory holding <bundle>/luac/*.json."
+        )
+    if asset is None:
+        warnings.append(
+            "No asset root exists. Asset lookups will fail. Set CS_ASSET_VIEWER_ROOT "
+            "to the extracted-assets directory."
+        )
+    elif table is not None and asset is not None:
+        # Both resolved, but they may still be the same tree, which usually means
+        # one of the two was left pointing at the other's location.
+        if _same_tree(asset, table):
+            warnings.append(
+                f"The asset root and table root resolve to the same tree ({asset}). "
+                "One of CS_ASSET_VIEWER_ROOT or CS_GAMEPLAY_TABLES_DIR is probably "
+                "unset; the extracted assets and the decoded tables are usually "
+                "separate directories."
+            )
+    if asset is not None and not any(
+        entry.is_dir() for entry in _safe_iterdir(asset)
+    ):
+        warnings.append(f"The asset root {asset} exists but contains no directories.")
+    return warnings
+
+
+def _same_tree(asset: Path, table: Path) -> bool:
+    try:
+        return asset.resolve() == table.resolve()
+    except OSError:
+        return False
+
+
+def _safe_iterdir(path: Path):
+    try:
+        return list(path.iterdir())
+    except OSError:
+        return []

@@ -97,3 +97,42 @@ def test_health_reports_absent_asset_root_without_raising(tmp_path):
     report = health(roots)
     assert report["roots"]["asset"]["exists"] is False
     assert report["roots"]["asset"]["resolved"] is None
+    assert report["ok"] is False
+    assert any("CS_ASSET_VIEWER_ROOT" in w for w in report["warnings"])
+
+
+def test_health_warns_when_both_roots_point_at_the_same_tree(tmp_path):
+    """A single base root that resolves is not evidence both halves are reachable."""
+    root = make_tree(tmp_path)
+    tables = tmp_path / "StreamingAssets"
+    (tables / "b" / "luac").mkdir(parents=True)
+    roots = resolve_roots(
+        env={
+            "CS_REVIVALSIDE_ROOT": str(root),
+            "CS_GAMEPLAY_TABLES_DIR": str(tables),
+            "CS_ASSET_VIEWER_ROOT": str(tables),
+        }
+    )
+    report = health(roots)
+    assert report["ok"] is False
+    assert any("same tree" in w for w in report["warnings"])
+
+
+def test_health_warns_when_table_root_is_missing(tmp_path):
+    root = make_tree(tmp_path)
+    import shutil
+
+    shutil.rmtree(root / "gameplay-jsons")
+    roots = resolve_roots(env={"CS_REVIVALSIDE_ROOT": str(root)})
+    report = health(roots)
+    assert report["ok"] is False
+    assert any("CS_GAMEPLAY_TABLES_DIR" in w for w in report["warnings"])
+
+
+def test_health_is_ok_for_a_complete_layout(tmp_path):
+    root = make_tree(tmp_path)
+    (root / "extracted-assets" / "all" / "Data" / "bundle").mkdir(parents=True)
+    roots = resolve_roots(env={"CS_REVIVALSIDE_ROOT": str(root)})
+    report = health(roots)
+    assert report["ok"] is True
+    assert report["warnings"] == []
