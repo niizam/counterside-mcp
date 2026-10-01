@@ -43,7 +43,7 @@
 - Consumes: nothing.
 - Produces: an importable package `counterside_mcp` with `__version__`.
 
-- [ ] **Step 1: Initialise version control**
+- [x] **Step 1: Initialise version control**
 
 Run (from `/home/windows/project/counterside-mcp`):
 ```bash
@@ -51,7 +51,7 @@ git init
 git branch -m main
 ```
 
-- [ ] **Step 2: Write `.gitignore`**
+- [x] **Step 2: Write `.gitignore`**
 
 ```gitignore
 __pycache__/
@@ -65,7 +65,7 @@ build/
 .coverage
 ```
 
-- [ ] **Step 3: Write `pyproject.toml`**
+- [x] **Step 3: Write `pyproject.toml`**
 
 ```toml
 [build-system]
@@ -96,7 +96,7 @@ testpaths = ["tests"]
 markers = ["parity: compares output against the live Node Mod:Side API"]
 ```
 
-- [ ] **Step 4: Write package init**
+- [x] **Step 4: Write package init**
 
 `src/counterside_mcp/__init__.py`:
 ```python
@@ -107,7 +107,7 @@ __version__ = "0.1.0"
 
 `tests/__init__.py` and `tests/unit/__init__.py`: empty files.
 
-- [ ] **Step 5: Install and verify import**
+- [x] **Step 5: Install and verify import**
 
 Run:
 ```bash
@@ -117,7 +117,7 @@ python3 -m venv .venv
 ```
 Expected: prints `0.1.0`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .gitignore pyproject.toml src tests
@@ -137,7 +137,7 @@ git commit -m "chore: scaffold counterside-mcp package"
 - Consumes: nothing.
 - Produces: `DomainError(message, status=400)`; `normalize_relative_path(value) -> str`; `is_inside(root, candidate) -> bool`; `resolve_existing(root, relative, label="Asset") -> Path`; `resolve_existing_dir(root, relative, label="Asset directory") -> Path`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_paths.py`:
 ```python
@@ -185,12 +185,12 @@ def test_is_inside(tmp_path):
     assert not is_inside(tmp_path, tmp_path.parent / "elsewhere")
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_paths.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.paths'`
 
-- [ ] **Step 3: Write `errors.py`**
+- [x] **Step 3: Write `errors.py`**
 
 ```python
 """Domain errors, mapped to MCP tool errors at the server boundary."""
@@ -204,7 +204,7 @@ class DomainError(Exception):
         self.status = status
 ```
 
-- [ ] **Step 4: Write `paths.py`**
+- [x] **Step 4: Write `paths.py`**
 
 ```python
 """Path normalisation and containment. Mirrors Mod:Side's resolveExistingAssetPath."""
@@ -257,12 +257,12 @@ def resolve_existing_dir(root: Path, relative: str, label: str = "Asset director
     return path
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_paths.py -v`
 Expected: PASS (6 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/counterside_mcp/errors.py src/counterside_mcp/paths.py tests/unit/test_paths.py
@@ -281,7 +281,7 @@ git commit -m "feat: add path normalisation and containment checks"
 - Consumes: `paths.normalize_relative_path`.
 - Produces: `Roots` dataclass with fields `revival_root: Path`, `asset_dirs: tuple[Path, ...]`, `table_dirs: tuple[Path, ...]`, `wiki_dir: Path`, `server_data_dir: Path`; `TABLE_ROOT_NAMES`; `resolve_roots(env=None, package_dir=None, explicit_asset_root=None) -> Roots`; `expand_root(root) -> tuple[Path, ...]`; `health(roots) -> dict`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_config.py`:
 ```python
@@ -356,12 +356,12 @@ def test_health_reports_missing_asset_root(tmp_path):
     assert report["roots"]["table"]["exists"] is True
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_config.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.config'`
 
-- [ ] **Step 3: Write `config.py`**
+- [x] **Step 3: Write `config.py`**
 
 ```python
 """Resolve the four data roots, from environment or a RevivalSide directory."""
@@ -493,12 +493,12 @@ def health(roots: Roots) -> dict:
     }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_config.py -v`
 Expected: PASS (7 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/counterside_mcp/config.py tests/unit/test_config.py
@@ -518,7 +518,7 @@ git commit -m "feat: resolve data roots from env or a RevivalSide directory"
 - Consumes: nothing.
 - Produces: `NKM_STAT_TYPE: dict[str, int]`; `stat_type_value(value) -> int`; `asset_type_for(relative_path, extension) -> str`; `humanize(value) -> str`; `normalize_relation_value(value) -> str`; `TEXT_EXTENSIONS: set[str]`; `UNITY_RESOURCE_TYPES: set[str]`.
 
-- [ ] **Step 1: Generate the stat enum verbatim from the Node source**
+- [x] **Step 1: Generate the stat enum verbatim from the Node source**
 
 Run:
 ```bash
@@ -539,7 +539,7 @@ console.log("wrote",Object.keys(out).length,"stat types");
 ```
 Expected: `wrote NN stat types` (NN > 40).
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 `tests/unit/test_stats.py`:
 ```python
@@ -586,12 +586,12 @@ def test_normalize_relation_value_strips_punctuation():
     assert normalize_relation_value("AB_INVEN_ICON_NKM-X.png") == "abinveniconnkmx"
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_stats.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.stats'`
 
-- [ ] **Step 4: Write `stats.py`**
+- [x] **Step 4: Write `stats.py`**
 
 ```python
 """Stat ids, asset typing, and value normalisation. Ported from the Node source."""
@@ -673,16 +673,16 @@ def normalize_search_token(value) -> str:
     return "".join(ch for ch in str(value or "").lower() if ch.isalnum())
 ```
 
-- [ ] **Step 5: Write `data/__init__.py`**
+- [x] **Step 5: Write `data/__init__.py`**
 
 Create `src/counterside_mcp/data/__init__.py` (empty) so `resources.files` resolves the package.
 
-- [ ] **Step 6: Run test to verify it passes**
+- [x] **Step 6: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_stats.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/counterside_mcp/stats.py src/counterside_mcp/data tests/unit/test_stats.py
@@ -701,7 +701,7 @@ git commit -m "feat: add stat ids, asset typing, and relation helpers"
 - Consumes: `config.Roots`.
 - Produces: `TableEntry` dataclass (`root`, `file_path`, `directory`, `file_name`, `relative_path`, `extension`, `table_name`); `normalize_table_base_name(file_name) -> str`; `parse_table_path(root, file_path) -> TableEntry | None`; `list_table_entries(roots) -> list[TableEntry]`; `find_table_entry(roots, directory, file_name) -> TableEntry | None`; `read_table(entry) -> object | None`; `extract_table_records(parsed) -> list`; `table_schema(records) -> list[dict]`; `read_table_records(roots, directory, file_name) -> tuple[list, dict]`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_tables.py`:
 ```python
@@ -773,12 +773,12 @@ def test_table_schema_collects_nested_paths(tmp_path):
     assert {"m_ID", "m_Stat.hp"} <= paths
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_tables.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.tables'`
 
-- [ ] **Step 3: Write `tables.py`**
+- [x] **Step 3: Write `tables.py`**
 
 ```python
 """Gameplay table discovery and reading. Mirrors Mod:Side's gameplay-jsons module."""
@@ -957,12 +957,12 @@ def table_entry_json(entry: TableEntry) -> dict:
     }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_tables.py -v`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/counterside_mcp/tables.py tests/unit/test_tables.py
@@ -982,7 +982,7 @@ git commit -m "feat: discover and read gameplay tables"
 - Consumes: `tables.TableEntry`, `tables.list_table_entries`, `tables.table_schema`, `tables.read_table_records`, `stats.tokenize`, `stats.normalize_search_token`.
 - Produces: `GameSystem` dataclass; `load_systems() -> list[GameSystem]`; `system_tables(system, entries) -> list[TableEntry]`; `public_system(system, entries) -> dict`; `list_systems(roots) -> dict`; `search_fields(roots, query) -> dict`.
 
-- [ ] **Step 1: Generate the system table verbatim from the Node source**
+- [x] **Step 1: Generate the system table verbatim from the Node source**
 
 Run:
 ```bash
@@ -1001,7 +1001,7 @@ console.log("wrote",GAME_SYSTEMS.length,"systems");
 ```
 Expected: `wrote 29 systems`.
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 `tests/unit/test_systems.py`:
 ```python
@@ -1042,12 +1042,12 @@ def test_search_fields_finds_deploy_cost(tmp_path):
     assert any("UNIT" in table["tableName"] for table in result["tables"])
 ```
 
-- [ ] **Step 3: Run test to verify it fails**
+- [x] **Step 3: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_systems.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.systems'`
 
-- [ ] **Step 4: Write `systems.py`**
+- [x] **Step 4: Write `systems.py`**
 
 ```python
 """Curated game systems and field search. Data generated verbatim from GAME_SYSTEMS."""
@@ -1222,12 +1222,12 @@ def _system_for(table: TableEntry, systems: list[GameSystem]) -> GameSystem | No
     return None
 ```
 
-- [ ] **Step 5: Run test to verify it passes**
+- [x] **Step 5: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_systems.py -v`
 Expected: PASS (3 tests)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/counterside_mcp/systems.py src/counterside_mcp/data/systems.json tests/unit/test_systems.py
@@ -1278,7 +1278,7 @@ Implemented in `objects.py`; verified against real data (3561 units, 639 ships,
 - Consumes: `config.Roots`, `paths`, `stats`.
 - Produces: `list_directory(roots, path, query, offset, limit) -> dict`; `asset_metadata(roots, path) -> dict`; `asset_bytes(roots, path) -> tuple[bytes, str]`; `text_preview(roots, path, max_bytes) -> dict`; `spine_set(roots, path) -> dict`; `find_related(roots, path) -> dict`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/unit/test_assets.py`:
 ```python
@@ -1352,7 +1352,7 @@ def test_find_related_matches_same_name(tmp_path):
     assert any("DEMO" in asset["name"] for asset in result["assets"])
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/unit/test_assets.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.assets'`
@@ -1686,12 +1686,12 @@ def _related_tables(roots: Roots, terms: set[str]) -> list[dict]:
     return matches
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/unit/test_assets.py -v`
 Expected: PASS (6 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/counterside_mcp/assets.py tests/unit/test_assets.py
@@ -1710,7 +1710,7 @@ git commit -m "feat: read asset directories, files, text, Spine sets and relatio
 - Consumes: every module above.
 - Produces: `mcp` (an `MCPServer` instance); `main()` entry point; thirteen tools and four resource templates registered.
 
-- [ ] **Step 1: Write the failing smoke test**
+- [x] **Step 1: Write the failing smoke test**
 
 `tests/test_server_smoke.py`:
 ```python
@@ -1755,7 +1755,7 @@ def test_list_objects_and_asset_listing(roots):
     assert listing["total"] >= 1
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `.venv/bin/pytest tests/test_server_smoke.py -v`
 Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.server'`
@@ -1970,12 +1970,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `.venv/bin/pytest tests/test_server_smoke.py -v`
 Expected: PASS (2 tests)
 
-- [ ] **Step 5: Verify the server starts and lists tools**
+- [x] **Step 5: Verify the server starts and lists tools**
 
 Run:
 ```bash
@@ -1992,7 +1992,7 @@ asyncio.run(go())
 ```
 Expected: `13 tools`, the thirteen `counterside_*` names, and `4 resource templates`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/counterside_mcp/server.py tests/test_server_smoke.py
@@ -2013,7 +2013,7 @@ git commit -m "feat: expose read-only MCP tools and resources over stdio"
 - Consumes: all modules; a running Mod:Side on `http://127.0.0.1:5175/mod-side/api`.
 - Produces: parity tests marked `parity`, skipped when the Node server is unreachable.
 
-- [ ] **Step 1: Write `tests/parity/conftest.py`**
+- [x] **Step 1: Write `tests/parity/conftest.py`**
 
 ```python
 import json
@@ -2044,7 +2044,7 @@ def node_api():
     return get
 ```
 
-- [ ] **Step 2: Write `tests/parity/test_parity.py`**
+- [x] **Step 2: Write `tests/parity/test_parity.py`**
 
 ```python
 import pytest
@@ -2078,14 +2078,14 @@ def test_asset_listing_parity(node_api, roots):
     assert [e["name"] for e in ours["entries"]] == [e["name"] for e in theirs["entries"]]
 ```
 
-- [ ] **Step 3: Create `tests/parity/__init__.py`** (empty).
+- [x] **Step 3: Create `tests/parity/__init__.py`** (empty).
 
-- [ ] **Step 4: Run the suite — parity skips when Node is down**
+- [x] **Step 4: Run the suite — parity skips when Node is down**
 
 Run: `.venv/bin/pytest -q`
 Expected: all unit tests pass; parity tests skip with "Mod:Side API is not running".
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/parity
@@ -2103,7 +2103,7 @@ git commit -m "test: add optional parity harness against the Node Mod:Side API"
 - Consumes: nothing.
 - Produces: user-facing setup and client-configuration docs.
 
-- [ ] **Step 1: Write `README.md`**
+- [x] **Step 1: Write `README.md`**
 
 ````markdown
 # counterside-mcp
@@ -2176,7 +2176,7 @@ exists, so a misconfiguration is visible immediately.
 ```
 ````
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add README.md
@@ -2193,12 +2193,12 @@ git commit -m "docs: add setup and client configuration README"
 **Interfaces:**
 - Consumes: the whole server; the real `RevivalSide` checkout and the extracted-asset tree.
 
-- [ ] **Step 1: Run the full unit suite**
+- [x] **Step 1: Run the full unit suite**
 
 Run: `.venv/bin/pytest -q -m "not parity"`
 Expected: PASS, no failures.
 
-- [ ] **Step 2: Point the server at real data and check health**
+- [x] **Step 2: Point the server at real data and check health**
 
 Run:
 ```bash
@@ -2212,7 +2212,7 @@ Expected: `tableCount` > 0, `roots.asset.exists` true (set `CS_ASSET_VIEWER_ROOT
 level is required; the parent holds only `all/` and `manifest.json`, so pointing
 at it makes every asset preview resolve to `""`), `systemsCount` = 29.
 
-- [ ] **Step 3: Exercise the object→asset join on real data**
+- [x] **Step 3: Exercise the object→asset join on real data**
 
 Run:
 ```bash
@@ -2225,7 +2225,7 @@ print(json.dumps(objects.find_asset_for_object(roots, 'unit', 1004), indent=2)[:
 ```
 Expected: a JSON object listing `assets` whose `path` values point at real PNGs under `Data/StreamingAssets/...`.
 
-- [ ] **Step 4: List a real asset directory and read a table**
+- [x] **Step 4: List a real asset directory and read a table**
 
 Run:
 ```bash
@@ -2239,7 +2239,7 @@ print(tables.list_table_entries(roots)[:2])
 ```
 Expected: real icon filenames, and at least two table entries.
 
-- [ ] **Step 5: Record the result**
+- [x] **Step 5: Record the result**
 
 No commit. Report the observed output to the user, including any root that had
 to be set explicitly on this machine.
