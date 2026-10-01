@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "counterside-mcp"
+version = "0.1.0"
+description = "Read-only MCP server for examining CounterSide game data"
+requires-python = ">=3.10"
+dependencies = ["mcp>=2.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+counterside-mcp = "counterside_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+counterside_mcp = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["parity: compares output against the live Node Mod:Side API"]
