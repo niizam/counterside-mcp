@@ -1,0 +1,1038 @@
+[
+  {
+    "id": "units",
+    "title": "Units & stats",
+    "description": "Identity, rarity, role, deployment cost, base stats and per-level growth.",
+    "keywords": [
+      "unit",
+      "character",
+      "soldier",
+      "mech",
+      "counter",
+      "hp",
+      "attack",
+      "defense",
+      "respawn"
+    ],
+    "directories": [
+      "ab_script_unit_data_unit_templet"
+    ],
+    "prefixes": [
+      "LUA_UNIT_",
+      "LUA_REARM_UNIT_",
+      "LUA_LIMITBREAK_",
+      "LUA_TACTIC_"
+    ],
+    "priorityTables": [
+      "LUA_UNIT_STAT_TEMPLET",
+      "LUA_UNIT_TEMPLET_BASE",
+      "LUA_UNIT_SKILL_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "HP / ATK / DEF",
+        "query": "unit hp attack defense",
+        "location": "LUA_UNIT_STAT_TEMPLET -> m_StatData.m_Stat.NST_HP / NST_ATK / NST_DEF"
+      },
+      {
+        "label": "Per-level growth",
+        "query": "unit stat per level",
+        "location": "LUA_UNIT_STAT_TEMPLET -> m_StatData.m_StatPerLevel.*"
+      },
+      {
+        "label": "Deployment cost",
+        "query": "unit respawn cost",
+        "location": "LUA_UNIT_STAT_TEMPLET -> m_RespawnCost"
+      }
+    ]
+  },
+  {
+    "id": "combat",
+    "title": "Core combat",
+    "description": "Damage factors, global stat rates, battle conditions and shared combat constants.",
+    "keywords": [
+      "combat",
+      "damage",
+      "formula",
+      "attack factor",
+      "stat rate",
+      "battle"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_DAMAGE_TEMPLET",
+      "LUA_GAME_STAT_",
+      "LUA_STAT_INFO_",
+      "LUA_BATTLE_CONDITION_",
+      "LUA_COMMON_CONST"
+    ],
+    "priorityTables": [
+      "LUA_DAMAGE_TEMPLET_BASE",
+      "LUA_GAME_STAT_RATE",
+      "LUA_BATTLE_CONDITION_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Damage multiplier",
+        "query": "damage attack factor",
+        "location": "LUA_DAMAGE_TEMPLET_BASE -> m_fAtkFactor"
+      },
+      {
+        "label": "Global stat rates",
+        "query": "game stat rate",
+        "location": "LUA_GAME_STAT_RATE -> NST_*"
+      }
+    ]
+  },
+  {
+    "id": "skills",
+    "title": "Skills, buffs & effects",
+    "description": "Unit skills, buff lifetime/stat modifiers, damage effects, reactors and animation data.",
+    "keywords": [
+      "skill",
+      "buff",
+      "debuff",
+      "effect",
+      "reactor",
+      "cooldown",
+      "lifetime"
+    ],
+    "directories": [
+      "ab_script_effect",
+      "ab_script_anim_data"
+    ],
+    "prefixes": [
+      "LUA_UNIT_SKILL_",
+      "LUA_BUFF_",
+      "LUA_DAMAGE_EFFECT_",
+      "LUA_EFFECT_",
+      "LUA_REACTOR_",
+      "LUA_COMMANDMODULE_"
+    ],
+    "priorityTables": [
+      "LUA_UNIT_SKILL_TEMPLET",
+      "LUA_BUFF_TEMPLET",
+      "LUA_DAMAGE_EFFECT_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Buff duration",
+        "query": "buff lifetime",
+        "location": "LUA_BUFF_TEMPLET -> m_fLifeTime"
+      },
+      {
+        "label": "Buff stat/value",
+        "query": "buff stat value",
+        "location": "LUA_BUFF_TEMPLET -> m_StatType1 / m_StatValue1"
+      }
+    ]
+  },
+  {
+    "id": "stages",
+    "title": "Stages & dungeons",
+    "description": "Stage links, dungeon rules, enemy waves, time limits, missions and entry requirements.",
+    "keywords": [
+      "stage",
+      "dungeon",
+      "enemy",
+      "wave",
+      "time limit",
+      "fight power"
+    ],
+    "directories": [
+      "ab_script_dungeon_templet",
+      "ab_script_dungeon_templet_all"
+    ],
+    "prefixes": [
+      "LUA_STAGE_",
+      "LUA_DUNGEON_",
+      "LUA_PHASE_",
+      "LUA_MAP_TEMPLET"
+    ],
+    "priorityTables": [
+      "LUA_STAGE_TEMPLET",
+      "LUA_DUNGEON_TEMPLET_BASE",
+      "LUA_PHASE_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Time limit",
+        "query": "dungeon time limit",
+        "location": "LUA_DUNGEON_TEMPLET_BASE -> m_fDungeonTimeMax"
+      },
+      {
+        "label": "Recommended power",
+        "query": "dungeon recommended fight power",
+        "location": "LUA_DUNGEON_TEMPLET_BASE -> m_DGRecommendFightPower"
+      },
+      {
+        "label": "Stage-to-battle link",
+        "query": "stage battle dungeon",
+        "location": "LUA_STAGE_TEMPLET -> m_StageBattleStrID"
+      }
+    ]
+  },
+  {
+    "id": "cutscene-scripts",
+    "title": "Cutscene scripts & dialogue",
+    "description": "Every cutscene sequence, including dialogue, speakers, expressions, positions, timing, branching, backgrounds, transitions, music and effects.",
+    "keywords": [
+      "cutscene",
+      "dialogue",
+      "speaker",
+      "expression",
+      "position",
+      "background",
+      "transition",
+      "branch",
+      "effect"
+    ],
+    "directories": [
+      "ab_script_cutscene"
+    ],
+    "prefixes": [],
+    "priorityTables": [],
+    "commonEdits": [
+      {
+        "label": "Dialogue text",
+        "query": "cutscene dialogue talk",
+        "location": "ab_script_cutscene/* -> m_Talk_*"
+      },
+      {
+        "label": "Speaker / expression / position",
+        "query": "cutscene speaker face position",
+        "location": "ab_script_cutscene/* -> m_CharStrID / m_Face / m_Pos"
+      },
+      {
+        "label": "Order / timing",
+        "query": "cutscene process wait time",
+        "location": "ab_script_cutscene/* -> m_CutScenProcessKey / m_bWaitClick / m_fWaitTime"
+      },
+      {
+        "label": "Background / transition",
+        "query": "cutscene background fade",
+        "location": "ab_script_cutscene/* -> m_BGFileName / m_bFadeIn / m_bFadeOut / m_fFadeTime"
+      }
+    ]
+  },
+  {
+    "id": "cutscene-characters",
+    "title": "Cutscene cast & portraits",
+    "description": "Speaker keys, displayed names and the character prefab used for cutscene portraits.",
+    "keywords": [
+      "cutscene",
+      "actor",
+      "speaker",
+      "cast",
+      "portrait",
+      "prefab",
+      "name"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_CUTSCENE_CHAR_TEMPLET"
+    ],
+    "priorityTables": [
+      "LUA_CUTSCENE_CHAR_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Actor key",
+        "query": "cutscene actor key",
+        "location": "LUA_CUTSCENE_CHAR_TEMPLET -> m_CutsceneSetting_Key / m_CharStrID"
+      },
+      {
+        "label": "Portrait prefab",
+        "query": "cutscene portrait prefab",
+        "location": "LUA_CUTSCENE_CHAR_TEMPLET -> m_PrefabStr"
+      },
+      {
+        "label": "Displayed speaker name",
+        "query": "cutscene speaker name",
+        "location": "LUA_CUTSCENE_CHAR_TEMPLET -> m_CharStr_*"
+      }
+    ]
+  },
+  {
+    "id": "cutscene-registration",
+    "title": "Cutscene registration & stage links",
+    "description": "File registration, login triggers, episode placement, stage routing and cutscene-only dungeon start links.",
+    "keywords": [
+      "cutscene",
+      "register",
+      "file list",
+      "login",
+      "trigger",
+      "episode",
+      "stage",
+      "dungeon",
+      "start"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_CUTSCENE_FILE_LIST",
+      "LUA_LOGIN_CUTSCENE_TEMPLET",
+      "LUA_EPISODE_TEMPLET",
+      "LUA_STAGE_TEMPLET",
+      "LUA_DUNGEON_TEMPLET_BASE"
+    ],
+    "priorityTables": [
+      "LUA_CUTSCENE_FILE_LIST",
+      "LUA_DUNGEON_TEMPLET_BASE",
+      "LUA_EPISODE_TEMPLET",
+      "LUA_STAGE_TEMPLET",
+      "LUA_LOGIN_CUTSCENE_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Register a script",
+        "query": "cutscene file registration",
+        "location": "LUA_CUTSCENE_FILE_LIST -> m_CutScenFile / m_CutScenType"
+      },
+      {
+        "label": "Attach a stage",
+        "query": "cutscene stage dungeon link",
+        "location": "LUA_EPISODE_TEMPLET / LUA_STAGE_TEMPLET -> m_StageBattleStrID; LUA_DUNGEON_TEMPLET_BASE -> m_CutScenStrIDBefore / m_CutScenStrIDAfter"
+      },
+      {
+        "label": "Login trigger",
+        "query": "login cutscene condition",
+        "location": "LUA_LOGIN_CUTSCENE_TEMPLET -> m_CutSceneStrID / m_CondType / m_CondValue / m_OrderList"
+      }
+    ]
+  },
+  {
+    "id": "cutscene-collection",
+    "title": "Cutscene collection & unlocks",
+    "description": "Collection gallery placement, episode grouping, labels, visibility and replay unlock requirements.",
+    "keywords": [
+      "cutscene",
+      "collection",
+      "gallery",
+      "replay",
+      "unlock",
+      "episode",
+      "subtab"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_COLLECTION_CUTSCENE_TEMPLET",
+      "LUA_SI_COLLECTION_CUTSCENE_TEMPLET"
+    ],
+    "priorityTables": [
+      "LUA_COLLECTION_CUTSCENE_TEMPLET",
+      "LUA_COLLECTION_CUTSCENE_TEMPLET2"
+    ],
+    "commonEdits": [
+      {
+        "label": "Replay unlock",
+        "query": "collection cutscene unlock",
+        "location": "LUA_COLLECTION_CUTSCENE_TEMPLET* -> m_UnlockReqType / m_UnlockReqValue"
+      },
+      {
+        "label": "Gallery placement",
+        "query": "collection cutscene episode tab",
+        "location": "LUA_COLLECTION_CUTSCENE_TEMPLET* -> m_EPCategory / m_EpisodeID / m_actID / m_SubTabId / m_SubIndex"
+      }
+    ]
+  },
+  {
+    "id": "cutscene-media",
+    "title": "Cutscene audio & animation",
+    "description": "Scene music mappings, BGM metadata, animation-event references and decoded animation data used by presentation commands.",
+    "keywords": [
+      "cutscene",
+      "music",
+      "bgm",
+      "audio",
+      "animation",
+      "presentation"
+    ],
+    "directories": [
+      "ab_script_anim_data"
+    ],
+    "prefixes": [
+      "LUA_SCEN_MUSIC",
+      "LUA_BGM_INFO_TEMPLETE",
+      "LUA_ANIMATION_EVENT_TEMPLET"
+    ],
+    "priorityTables": [
+      "LUA_SCEN_MUSIC",
+      "LUA_BGM_INFO_TEMPLETE",
+      "LUA_ANIMATION_EVENT_TEMPLET",
+      "LUA_ANIM_DATA"
+    ],
+    "commonEdits": [
+      {
+        "label": "Scene music",
+        "query": "cutscene scene music",
+        "location": "LUA_SCEN_MUSIC -> m_NKM_SCEN_ID / m_MusicName"
+      },
+      {
+        "label": "Animation reference",
+        "query": "cutscene animation name bundle",
+        "location": "ab_script_anim_data/LUA_ANIM_DATA -> animName / bundleName"
+      }
+    ]
+  },
+  {
+    "id": "story",
+    "title": "Episodes & story",
+    "description": "Episodes, acts, stage ordering, cutscene file lists, dialogue scripts and collection scenes.",
+    "keywords": [
+      "episode",
+      "story",
+      "cutscene",
+      "dialogue",
+      "act",
+      "scene"
+    ],
+    "directories": [
+      "ab_script_cutscene"
+    ],
+    "prefixes": [
+      "LUA_EPISODE_",
+      "LUA_CUTSCENE_",
+      "LUA_COLLECTION_CUTSCENE_"
+    ],
+    "priorityTables": [
+      "LUA_EPISODE_TEMPLET",
+      "LUA_EPISODE_GROUP_TEMPLET",
+      "LUA_CUTSCENE_FILE_LIST"
+    ],
+    "commonEdits": [
+      {
+        "label": "Episode/stage ordering",
+        "query": "episode act stage index",
+        "location": "LUA_EPISODE_TEMPLET -> m_EpisodeID / m_ActID / m_StageIndex"
+      },
+      {
+        "label": "Battle/cutscene link",
+        "query": "episode stage battle cutscene",
+        "location": "LUA_EPISODE_TEMPLET -> m_StageBattleStrID; LUA_CUTSCENE_FILE_LIST -> file entries"
+      }
+    ]
+  },
+  {
+    "id": "items",
+    "title": "Items & equipment",
+    "description": "Gear stats, set options, tiers, enchant growth, molds, materials and consumables.",
+    "keywords": [
+      "item",
+      "equipment",
+      "gear",
+      "set option",
+      "enchant",
+      "mold",
+      "material"
+    ],
+    "directories": [
+      "ab_script_item_templet"
+    ],
+    "prefixes": [
+      "LUA_ITEM_",
+      "LUA_EQUIP_",
+      "LUA_PIECE_",
+      "LUA_RANDOM_MOLD_",
+      "LUA_CUSTOM_BOX_"
+    ],
+    "priorityTables": [
+      "LUA_ITEM_EQUIP_TEMPLET",
+      "LUA_ITEM_EQUIP_SET_OPTION",
+      "LUA_ITEM_MISC_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Main gear stat",
+        "query": "equipment stat value",
+        "location": "LUA_ITEM_EQUIP_TEMPLET -> STAT_TYPE_1 / STAT_VALUE_1"
+      },
+      {
+        "label": "Enchant growth",
+        "query": "equipment levelup stat",
+        "location": "LUA_ITEM_EQUIP_TEMPLET -> STAT_LEVELUP_VALUE_1 / m_MaxEnchantLevel"
+      }
+    ]
+  },
+  {
+    "id": "rewards",
+    "title": "Rewards & drops",
+    "description": "Reward groups, random boxes, drop lists, score rewards and attendance payouts.",
+    "keywords": [
+      "reward",
+      "drop",
+      "loot",
+      "box",
+      "payout",
+      "attendance"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_REWARD_",
+      "LUA_ITEM_DROP_",
+      "LUA_RANDOM_REWARD_",
+      "LUA_ATTENDANCE_",
+      "LUA_SCORE_REWARD_"
+    ],
+    "priorityTables": [
+      "LUA_REWARD_TEMPLET_CL",
+      "LUA_REWARD_GROUP_TEMPLET",
+      "LUA_ITEM_DROP_LIST"
+    ],
+    "commonEdits": [
+      {
+        "label": "Reward item/type",
+        "query": "reward id type",
+        "location": "LUA_REWARD_TEMPLET_CL -> m_RewardType / m_RewardID"
+      },
+      {
+        "label": "Reward amount",
+        "query": "reward value count",
+        "location": "Reward-owning table -> m_RewardValue_* / count fields"
+      }
+    ]
+  },
+  {
+    "id": "progression",
+    "title": "Progression & upgrades",
+    "description": "Experience curves, limit breaks, tactical updates, rearmament and ship growth.",
+    "keywords": [
+      "progression",
+      "upgrade",
+      "level",
+      "experience",
+      "exp",
+      "limit break",
+      "rearm",
+      "tactical"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_UNIT_EXP_",
+      "LUA_REARM_",
+      "LUA_LIMITBREAK_",
+      "LUA_TACTIC_UPDATE_",
+      "LUA_SHIP_LEVELUP_",
+      "LUA_SHIP_LIMITBREAK_"
+    ],
+    "priorityTables": [
+      "LUA_UNIT_EXP_TABLE",
+      "LUA_LIMITBREAK_INFO",
+      "LUA_REARMAMENT_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Unit EXP curve",
+        "query": "unit experience level",
+        "location": "LUA_UNIT_EXP_TABLE -> level/EXP fields"
+      },
+      {
+        "label": "Limit-break cost",
+        "query": "limit break cost",
+        "location": "LUA_LIMITBREAK_INFO -> item/count fields"
+      }
+    ]
+  },
+  {
+    "id": "missions",
+    "title": "Missions & achievements",
+    "description": "Mission conditions, counters, reset cadence, completion counts and rewards.",
+    "keywords": [
+      "mission",
+      "achievement",
+      "objective",
+      "daily",
+      "weekly",
+      "counter"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_MISSION_",
+      "LUA_ACHIEVE_",
+      "LUA_COUNTER_"
+    ],
+    "priorityTables": [
+      "LUA_MISSION_TEMPLET",
+      "LUA_MISSION_TAB_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Completion requirement",
+        "query": "mission times condition",
+        "location": "LUA_MISSION_TEMPLET -> m_MissionCond / m_Times"
+      },
+      {
+        "label": "Mission reward",
+        "query": "mission reward value",
+        "location": "LUA_MISSION_TEMPLET -> m_RewardType_* / m_RewardID_* / m_RewardValue_*"
+      }
+    ]
+  },
+  {
+    "id": "economy",
+    "title": "Economy & shops",
+    "description": "Currencies, storefront tabs, products, prices, exchange recipes and packages.",
+    "keywords": [
+      "economy",
+      "shop",
+      "currency",
+      "price",
+      "exchange",
+      "package",
+      "cash"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_CURRENCY_",
+      "LUA_SHOP_",
+      "LUA_PACKAGE_",
+      "LUA_EXCHANGE_",
+      "LUA_CASH_"
+    ],
+    "priorityTables": [
+      "LUA_CURRENCY_TEMPLET",
+      "LUA_SHOP_TEMPLET_01",
+      "LUA_SHOP_TAB_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Shop price",
+        "query": "shop price cost",
+        "location": "LUA_SHOP_* -> price/resource/count fields"
+      },
+      {
+        "label": "Currency definition",
+        "query": "currency item",
+        "location": "LUA_CURRENCY_TEMPLET -> currency identity and display fields"
+      }
+    ]
+  },
+  {
+    "id": "contracts",
+    "title": "Recruitment & contracts",
+    "description": "Recruit pools, pickup banners, categories, tabs and contract costs.",
+    "keywords": [
+      "contract",
+      "recruit",
+      "banner",
+      "pickup",
+      "unit pool",
+      "gacha"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_CONTRACT"
+    ],
+    "priorityTables": [
+      "LUA_CONTRACT",
+      "LUA_CONTRACT_UNIT_POOL",
+      "LUA_CONTRACT_CUSTOM_PICKUP"
+    ],
+    "commonEdits": [
+      {
+        "label": "Recruit pool",
+        "query": "contract unit pool",
+        "location": "LUA_CONTRACT_UNIT_POOL -> unit/rate fields"
+      },
+      {
+        "label": "Recruit cost",
+        "query": "contract cost",
+        "location": "LUA_CONTRACT -> item/count fields"
+      }
+    ]
+  },
+  {
+    "id": "ships",
+    "title": "Ships",
+    "description": "Ship identity, build recipes, stats, skills, level caps and limit breaks.",
+    "keywords": [
+      "ship",
+      "build",
+      "ship skill",
+      "ship level"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_SHIP_"
+    ],
+    "priorityTables": [
+      "LUA_SHIP_BUILD_TEMPLET",
+      "LUA_SHIP_LEVELUP_TEMPLET",
+      "LUA_SHIP_SKILL_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Level cap/cost",
+        "query": "ship max level cost",
+        "location": "LUA_SHIP_LEVELUP_TEMPLET -> m_ShipMaxLevel / m_Credit / material count"
+      }
+    ]
+  },
+  {
+    "id": "operators",
+    "title": "Operators",
+    "description": "Operator base stats, active/passive skills, EXP and random passive pools.",
+    "keywords": [
+      "operator",
+      "operator skill",
+      "passive"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_OPERATOR_",
+      "LUA_UNIT_STAT_TEMPLET_OPR",
+      "LUA_UNIT_TEMPLET_BASE_OPR"
+    ],
+    "priorityTables": [
+      "LUA_OPERATOR_SKILL_TEMPLET",
+      "LUA_OPERATOR_RANDOM_PASSIVE_TEMPLET",
+      "LUA_UNIT_STAT_TEMPLET_OPR"
+    ],
+    "commonEdits": [
+      {
+        "label": "Operator skill",
+        "query": "operator skill level target",
+        "location": "LUA_OPERATOR_SKILL_TEMPLET -> m_OperSkillTarget / m_MaxSkillLevel"
+      }
+    ]
+  },
+  {
+    "id": "pvp",
+    "title": "PvP",
+    "description": "Ranked/league rules, seasons, maps, rewards, bans and PvP-specific stat scaling.",
+    "keywords": [
+      "pvp",
+      "ranked",
+      "league",
+      "season",
+      "ban",
+      "arena"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_PVP_"
+    ],
+    "priorityTables": [
+      "LUA_PVP_STAT_RATE",
+      "LUA_PVP_SEASON_TEMPLET",
+      "LUA_PVP_RANK_SEASON_REWARD"
+    ],
+    "commonEdits": [
+      {
+        "label": "PvP stat scaling",
+        "query": "pvp hp attack stat rate",
+        "location": "LUA_PVP_STAT_RATE -> NST_HP / NST_ATK / other NST_*"
+      }
+    ]
+  },
+  {
+    "id": "raids",
+    "title": "Raids & bosses",
+    "description": "Raid stages, boss levels, damage basis, entry cost, participation and rank rewards.",
+    "keywords": [
+      "raid",
+      "boss",
+      "fierce",
+      "damage basis",
+      "participation"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_RAID_",
+      "LUA_FIERCE_",
+      "LUA_BOSS_"
+    ],
+    "priorityTables": [
+      "LUA_RAID_TEMPLET",
+      "LUA_FIERCE_TEMPLET",
+      "LUA_FIERCE_POINT_REWARD"
+    ],
+    "commonEdits": [
+      {
+        "label": "Boss tuning",
+        "query": "raid level damage basis",
+        "location": "LUA_RAID_TEMPLET -> m_RaidLevel / Raid_Damage_Basis"
+      },
+      {
+        "label": "Entry cost",
+        "query": "raid item cost",
+        "location": "LUA_RAID_TEMPLET -> m_StageReqItemID / m_StageReqItemCount"
+      }
+    ]
+  },
+  {
+    "id": "guild",
+    "title": "Guilds",
+    "description": "Guild levels, attendance, raid/dungeon schedules, bosses, currencies and rewards.",
+    "keywords": [
+      "guild",
+      "consortium",
+      "guild raid",
+      "guild dungeon"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_GUILD_"
+    ],
+    "priorityTables": [
+      "LUA_GUILD_LEVEL_TEMPLET",
+      "LUA_GUILD_RAID_TEMPLET",
+      "LUA_GUILD_DUNGEON_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Guild raid/reward",
+        "query": "guild raid reward",
+        "location": "LUA_GUILD_RAID_* and LUA_GUILD_*_REWARD tables"
+      }
+    ]
+  },
+  {
+    "id": "warfare",
+    "title": "Warfare",
+    "description": "Warfare maps, nodes, squads, win/loss conditions, missions and container rewards.",
+    "keywords": [
+      "warfare",
+      "map",
+      "node",
+      "win condition",
+      "container"
+    ],
+    "directories": [
+      "ab_script_warfare",
+      "ab_script_warfare_map_templet_all"
+    ],
+    "prefixes": [
+      "LUA_WARFARE_"
+    ],
+    "priorityTables": [
+      "LUA_WARFARE_TEMPLET",
+      "LUA_WARFARE_UNIT_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Win/loss rules",
+        "query": "warfare win condition",
+        "location": "LUA_WARFARE_TEMPLET -> m_WFWinCondition / m_WFWinValue / loss fields"
+      },
+      {
+        "label": "Time/power",
+        "query": "warfare time fight power",
+        "location": "LUA_WARFARE_TEMPLET -> m_fWarfareTimeMax / m_WFRecommendFightPower"
+      }
+    ]
+  },
+  {
+    "id": "world",
+    "title": "World map & exploration",
+    "description": "Cities, branches, exploration missions, events, dives and world-map rewards.",
+    "keywords": [
+      "world map",
+      "explore",
+      "branch",
+      "city",
+      "dive",
+      "world"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_WORLDMAP_",
+      "LUA_EXPLORE_",
+      "LUA_DIVE_"
+    ],
+    "priorityTables": [
+      "LUA_WORLDMAP_CITY_TEMPLET",
+      "LUA_EXPLORE_TEMPLET",
+      "LUA_DIVE_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Exploration time/reward",
+        "query": "explore time reward",
+        "location": "LUA_EXPLORE_* -> time/cost/reward fields"
+      }
+    ]
+  },
+  {
+    "id": "events",
+    "title": "Events",
+    "description": "Event schedules, point shops, missions, passes, stages, drops and temporary rewards.",
+    "keywords": [
+      "event",
+      "festival",
+      "event pass",
+      "point shop"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_EVENT_"
+    ],
+    "priorityTables": [
+      "LUA_EVENT_TEMPLET",
+      "LUA_EVENT_MISSION_TEMPLET",
+      "LUA_EVENT_PASS_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Event schedule",
+        "query": "event start end time",
+        "location": "LUA_EVENT_* -> date/time fields"
+      },
+      {
+        "label": "Event points/rewards",
+        "query": "event point reward",
+        "location": "LUA_EVENT_* -> point/reward fields"
+      }
+    ]
+  },
+  {
+    "id": "challenge",
+    "title": "Challenge modes",
+    "description": "Dimension Trimming, Shadow Palace and other scored/penalty combat modes.",
+    "keywords": [
+      "dimension trimming",
+      "trim",
+      "shadow palace",
+      "challenge",
+      "penalty",
+      "score"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_TRIM_",
+      "LUA_SHADOW_",
+      "LUA_CHALLENGE_"
+    ],
+    "priorityTables": [
+      "LUA_TRIM_TEMPLET",
+      "LUA_TRIM_COMBAT_PENALTY",
+      "LUA_SHADOW_PALACE_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "Combat penalty",
+        "query": "trim combat penalty",
+        "location": "LUA_TRIM_COMBAT_PENALTY -> penalty stat/value fields"
+      },
+      {
+        "label": "Mode rewards",
+        "query": "trim shadow reward",
+        "location": "LUA_TRIM_REWARD_CL / LUA_SHADOW_* reward tables"
+      }
+    ]
+  },
+  {
+    "id": "office",
+    "title": "Office & interactions",
+    "description": "Dorm/office furniture, interiors, NPC interaction data and unit dialogue metadata.",
+    "keywords": [
+      "office",
+      "interior",
+      "furniture",
+      "npc",
+      "interaction",
+      "dorm"
+    ],
+    "directories": [
+      "ab_script_npc"
+    ],
+    "prefixes": [
+      "LUA_OFFICE_",
+      "LUA_INTERIOR_",
+      "LUA_FURNITURE_",
+      "LUA_UNIT_VOICE_"
+    ],
+    "priorityTables": [
+      "LUA_OFFICE_INTERACTION_TEMPLET",
+      "LUA_UNIT_VOICE_TEMPLET"
+    ],
+    "commonEdits": [
+      {
+        "label": "NPC interaction",
+        "query": "npc interaction",
+        "location": "ab_script_npc/* -> interaction conditions and dialogue values"
+      }
+    ]
+  },
+  {
+    "id": "rules",
+    "title": "Client rules & unlocks",
+    "description": "Feature gates, shared constants, open tags, content unlock requirements and client configuration.",
+    "keywords": [
+      "unlock",
+      "feature",
+      "content",
+      "client const",
+      "common const",
+      "open tag",
+      "rule"
+    ],
+    "directories": [],
+    "prefixes": [
+      "LUA_CONTENTS_UNLOCK_",
+      "LUA_CLIENT_CONST",
+      "LUA_COMMON_CONST",
+      "LUA_OPEN_TAG_"
+    ],
+    "priorityTables": [
+      "LUA_CONTENTS_UNLOCK_TEMPLET",
+      "LUA_CLIENT_CONST",
+      "LUA_COMMON_CONST"
+    ],
+    "commonEdits": [
+      {
+        "label": "Feature unlock",
+        "query": "contents unlock requirement",
+        "location": "LUA_CONTENTS_UNLOCK_TEMPLET -> unlock type/value fields"
+      }
+    ]
+  },
+  {
+    "id": "localization",
+    "title": "Text & localization",
+    "description": "String tables used by names, descriptions, dialogue and localized UI text.",
+    "keywords": [
+      "text",
+      "string",
+      "localization",
+      "name",
+      "description",
+      "dialogue"
+    ],
+    "directories": [
+      "ab_script_string_table"
+    ],
+    "prefixes": [
+      "LUA_STRING_"
+    ],
+    "priorityTables": [],
+    "commonEdits": [
+      {
+        "label": "Displayed text",
+        "query": "string localization text",
+        "location": "ab_script_string_table/* -> string ID and localized text"
+      }
+    ]
+  },
+  {
+    "id": "all",
+    "title": "All gameplay data",
+    "description": "The complete decoded LUAC catalog, including uncategorized and one-off systems.",
+    "keywords": [
+      "all",
+      "everything",
+      "raw",
+      "table"
+    ],
+    "directories": [
+      "*"
+    ],
+    "prefixes": [],
+    "priorityTables": [
+      "LUA_UNIT_STAT_TEMPLET",
+      "LUA_STAGE_TEMPLET",
+      "LUA_REWARD_TEMPLET_CL"
+    ],
+    "commonEdits": []
+  }
+]
