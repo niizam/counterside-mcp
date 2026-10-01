@@ -51,7 +51,7 @@ Understanding these four layers is what makes the port tractable.
 | Tables | `modules/gameplay-jsons/index.js` | Resolves decoded `LUA_*.json` gameplay tables under `<root>/[Assetbundles\|StreamingAssets]/<bundle>/luac/`. |
 | Objects | `modules/asset-catalog/index.js` | Joins `LUA_UNIT_TEMPLET_BASE` / `LUA_ITEM_EQUIP_TEMPLET` with stat, skill, skin, collection tables; emits **id → asset-name mappings**. |
 | Assets | `server/assetViewer.js` | Walks the extracted tree: directory listing with typed entries, file/range serving, text preview, Spine set resolution, related-data graph. |
-| Systems | `GAME_SYSTEMS` in `assetViewer.js` | 26 curated game systems (units, items, stages, story, …) with keywords and "common edits" hints. |
+| Systems | `GAME_SYSTEMS` in `assetViewer.js` | 29 curated game systems (units, items, stages, story, …) with keywords and "common edits" hints. |
 
 Verified facts about the data on disk (this machine):
 
@@ -172,7 +172,7 @@ read-only.
 | Tool | Arguments | Returns |
 |---|---|---|
 | `counterside_health` | — | Resolved roots, existence/readability of each, table count, asset-tree availability, systems count, package version. |
-| `counterside_list_systems` | — | The 26 game systems: `id`, `title`, `description`, `keywords`, `tableCount`, `commonEdits[]`. |
+| `counterside_list_systems` | — | The 29 game systems: `id`, `title`, `description`, `keywords`, `tableCount`, `commonEdits[]`. |
 | `counterside_search_fields` | `query` (≥2 chars) | Ranked systems, tables and fields matching the query, mirroring Mod:Side's field search and `FIELD_ALIASES`. |
 
 ### 6.2 Tables
@@ -243,7 +243,7 @@ Details that must match Mod:Side, each of which gets a unit test:
   document has `skeleton` plus `bones`/`slots`/`animations`.
 - **Atlas page parsing** — lines that are not `key: value` and end in `.png`.
 
-The 26-system table and the stat enum are data, not behaviour. They are copied
+The 29-system table and the stat enum are data, not behaviour. They are copied
 verbatim from the Node source and pinned by parity tests.
 
 ## 8. Error handling
@@ -271,7 +271,7 @@ fixture set of calls and compares Python output against the Node API when
 `npm run modside` is reachable; the JSON is diffed, ignoring volatile fields.
 When the server is not running the tests skip cleanly, so the suite is always
 green in a bare checkout. This is the mechanism that catches drift in the
-26-system table, the stat enum, and the object join.
+29-system table, the stat enum, and the object join.
 
 An end-to-end smoke test drives the MCP server in-process with the MCP client
 and asserts that `health`, one table read, one object inspection and one asset

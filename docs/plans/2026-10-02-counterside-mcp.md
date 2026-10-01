@@ -18,7 +18,7 @@
 - Backslashes in paths are normalised to `/`; every caller-supplied path is containment-checked against the asset root before any file operation.
 - Pagination default limit 100, clamped to max 250.
 - Environment variable names copied verbatim from the spec: `CS_REVIVALSIDE_ROOT`, `CS_ASSET_VIEWER_ROOT`, `CS_GAMEPLAY_TABLES_DIR`, `CS_GAMEPLAY_JSON_ROOTS`, `CS_GAMEPLAY_TABLE_ROOTS`, `CS_COUNTERSIDE_WIKI`, `CS_SERVER_DATA_DIR`.
-- The 26-system table and the stat enum are copied verbatim from the Node source and pinned by parity tests.
+- The 29-system table and the stat enum are copied verbatim from the Node source and pinned by parity tests.
 
 ## Review Focus
 
@@ -999,7 +999,7 @@ fs.writeFileSync("src/counterside_mcp/data/systems.json",JSON.stringify(GAME_SYS
 console.log("wrote",GAME_SYSTEMS.length,"systems");
 '
 ```
-Expected: `wrote 26 systems`.
+Expected: `wrote 29 systems`.
 
 - [ ] **Step 2: Write the failing test**
 
@@ -1023,7 +1023,7 @@ def build_roots(tmp_path: Path) -> Roots:
 
 def test_systems_loaded_verbatim():
     systems = load_systems()
-    assert len(systems) == 26
+    assert len(systems) == 29
     ids = {s.id for s in systems}
     assert {"units", "items", "stages", "story", "all"} <= ids
 
@@ -1243,526 +1243,30 @@ git commit -m "feat: add game systems and field search"
 - Test: `tests/unit/test_objects.py`
 
 **Interfaces:**
-- Consumes: `config.Roots`, `tables.read_table_records`, `stats.stat_type_value`, `stats.humanize`, `stats.normalize_relation_value`, `paths.resolve_existing`.
-- Produces: `normalize_object_type(value) -> str`; `list_objects(roots, type, query, offset, limit) -> dict`; `get_object(roots, type, object_id) -> dict`; `find_asset_for_object(roots, type, object_id, field=None) -> dict`.
-
-The catalog loader reads units from `server-data/units.json` when present (authoritative roster), else from `LUA_UNIT_TEMPLET_BASE*.json` joined with `LUA_UNIT_STAT_TEMPLET*.json`. Gears come from `ab_script_item_templet/LUA_ITEM_EQUIP_TEMPLET.json`. Skins, collections, skills, set options and stat info are grouped/indexed exactly as the Node catalog does.
-
-- [ ] **Step 1: Write the failing test**
-
-`tests/unit/test_objects.py`:
-```python
-import json
-from pathlib import Path
-
-import pytest
-
-from counterside_mcp.config import Roots
-from counterside_mcp.errors import DomainError
-from counterside_mcp.objects import get_object, list_objects, normalize_object_type
-
-
-def build_roots(tmp_path: Path) -> Roots:
-    luac = tmp_path / "StreamingAssets" / "ab_script_unit_data" / "luac"
-    luac.mkdir(parents=True)
-    (luac / "LUA_UNIT_TEMPLET_BASE.json").write_text(json.dumps({"records": [{
-        "m_UnitID": 205, "m_UnitStrID": "NKM_SHIP_A_COFFIN_TR_2", "m_BaseUnitID": 100,
-        "m_NKM_UNIT_TYPE": "NUT_SHIP", "m_Name": "NAME_205",
-        "m_InvenIconName": "AB_INVEN_ICON_NKM_SHIP_A_COFFIN",
-        "m_SkillStrID1": "SKILL_ONE",
-    }]}))
-    (luac / "LUA_UNIT_STAT_TEMPLET.json").write_text(json.dumps({"records": [{
-        "m_UnitStrID": "NKM_SHIP_A_COFFIN_TR_2",
-        "m_StatData": {"m_Stat": {"NST_HP": 100}, "m_StatPerLevel": {"NST_HP": 10}},
-    }]}))
-    (luac / "LUA_UNIT_SKILL_TEMPLET.json").write_text(json.dumps({"records": [{
-        "m_UnitSkillStrID": "SKILL_ONE", "m_UnitSkillID": 9001, "m_UnitSkillIcon": "ICON_SKILL_ONE",
-    }]}))
-    icons = tmp_path / "assets" / "Data" / "StreamingAssets" / "ab_inven_icon_unit" / "Texture2D"
-    icons.mkdir(parents=True)
-    (icons / "AB_INVEN_ICON_NKM_SHIP_A_COFFIN.png").write_bytes(b"\x89PNG")
-    return Roots(tmp_path, (tmp_path / "assets",), (tmp_path / "StreamingAssets",), tmp_path / "wiki", tmp_path / "server-data")
-
-
-def test_normalize_object_type_defaults_and_rejects():
-    assert normalize_object_type(None) == "unit"
-    assert normalize_object_type("Gear") == "gear"
-    with pytest.raises(DomainError):
-        normalize_object_type("weapon")
-
-
-def test_list_objects_filters(tmp_path):
-    roots = build_roots(tmp_path)
-    result = list_objects(roots, "ship", "", 0, 100)
-    assert result["total"] == 1
-    assert result["objects"][0]["id"] == 205
-
-
-def test_get_object_maps_asset_and_ids(tmp_path):
-    roots = build_roots(tmp_path)
-    obj = get_object(roots, "ship", 205)
-    fields = {entry["field"]: entry for entry in obj["ids"]}
-    assert fields["m_UnitID"]["value"] == 205
-    assert fields["m_BaseUnitID"]["value"] == 100
-    assert fields["m_InvenIconName"]["preview"].endswith("AB_INVEN_ICON_NKM_SHIP_A_COFFIN.png")
-    assert any(skill["field"] == "m_UnitSkillID" and skill["value"] == 9001 for skill in obj["ids"])
-    assert obj["stats"][0]["statType"] == "NST_HP"
-    assert obj["stats"][0]["perLevel"] == 10
-
-
-def test_get_object_missing_raises(tmp_path):
-    roots = build_roots(tmp_path)
-    with pytest.raises(DomainError):
-        get_object(roots, "ship", 999999)
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `.venv/bin/pytest tests/unit/test_objects.py -v`
-Expected: FAIL — `ModuleNotFoundError: No module named 'counterside_mcp.objects'`
-
-- [ ] **Step 3: Write `objects.py`**
-
-```python
-"""Game objects: units, ships, operators, gear. Port of modules/asset-catalog."""
-
-import json
-from pathlib import Path
-
-from .config import Roots
-from .errors import DomainError
-from .stats import humanize, normalize_relation_value, stat_type_value
-from .tables import read_table_records
-
-TYPES = {"unit", "ship", "operator", "gear"}
-
-UNIT_ASSETS = [
-    ("m_InvenIconName", "Management/list icon PNG ID", "Compact unit icon."),
-    ("m_FaceCardName", "Recruitment/card PNG ID", "Large card portrait."),
-    ("m_SpineIllustName", "Management/gacha illustration ID", "Large animated Spine illustration."),
-    ("m_SpineSDName", "SD/chibi illustration ID", "Small Spine illustration."),
-    ("m_MiniMapFaceName", "Battle minimap portrait ID", "Battle minimap portrait."),
-    ("m_SpriteBundleName", "Battle Spine bundle ID", "AssetBundle containing the live combat Spine."),
-    ("m_SpriteName", "Battle Spine object ID", "Live combat Spine object name."),
-]
-
-
-def normalize_object_type(value) -> str:
-    object_type = str(value or "unit").lower()
-    if object_type not in TYPES:
-        raise DomainError(f"Unknown object type: {object_type}")
-    return object_type
-
-
-def _group_by(rows: list, field_name: str) -> dict[str, list]:
-    grouped: dict[str, list] = {}
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        key = row.get(field_name)
-        if key is None or key == "":
-            continue
-        grouped.setdefault(str(key), []).append(row)
-    return grouped
-
-
-def _index_by(rows: list, field_name: str) -> dict[str, dict]:
-    indexed: dict[str, dict] = {}
-    for row in rows:
-        if isinstance(row, dict) and row.get(field_name) is not None and str(row[field_name]) not in indexed:
-            indexed[str(row[field_name])] = row
-    return indexed
-
-
-def _load_units(roots: Roots) -> list[dict]:
-    stored_path = Path(roots.server_data_dir) / "units.json"
-    if stored_path.exists():
-        try:
-            stored = json.loads(stored_path.read_text(encoding="utf-8"))
-            if isinstance(stored, dict) and isinstance(stored.get("byId"), dict):
-                return list(stored["byId"].values())
-        except (OSError, json.JSONDecodeError):
-            pass
-    files = [
-        ("LUA_UNIT_TEMPLET_BASE.json", "LUA_UNIT_STAT_TEMPLET.json"),
-        ("LUA_UNIT_TEMPLET_BASE2.json", "LUA_UNIT_STAT_TEMPLET2.json"),
-        ("LUA_UNIT_TEMPLET_BASE_SD.json", "LUA_UNIT_STAT_TEMPLET_SD.json"),
-        ("LUA_UNIT_TEMPLET_BASE_OPR.json", "LUA_UNIT_STAT_TEMPLET_OPR.json"),
-    ]
-    by_id: dict[int, dict] = {}
-    for base_file, stat_file in files:
-        base, _ = read_table_records(roots, "ab_script_unit_data", base_file)
-        stats, _ = read_table_records(roots, "ab_script_unit_data", stat_file)
-        stats_by_str = _index_by(stats, "m_UnitStrID")
-        for row in base:
-            if not isinstance(row, dict):
-                continue
-            try:
-                unit_id = int(row.get("m_UnitID") or 0)
-            except (TypeError, ValueError):
-                unit_id = 0
-            if unit_id > 0:
-                by_id[unit_id] = {**row, "_sourceTable": base_file, "_stat": stats_by_str.get(str(row.get("m_UnitStrID")))}
-    return list(by_id.values())
-
-
-class Catalog:
-    def __init__(self, roots: Roots):
-        self.roots = roots
-        units = _load_units(roots)
-        gears, _ = read_table_records(roots, "ab_script_item_templet", "LUA_ITEM_EQUIP_TEMPLET.json")
-        wiki_units = _load_wiki_index(Path(roots.wiki_dir) / "units.json")
-        wiki_gears = _load_wiki_index(Path(roots.wiki_dir) / "gears.json")
-        self.wiki_units = wiki_units
-        self.wiki_gears = wiki_gears
-        self.unit = [u for u in units if str(u.get("m_NKM_UNIT_TYPE") or "") not in ("NUT_SHIP", "NUT_OPERATOR", "NUT_SYSTEM")]
-        self.ship = [u for u in units if str(u.get("m_NKM_UNIT_TYPE") or "") == "NUT_SHIP"]
-        self.operator = [u for u in units if str(u.get("m_NKM_UNIT_TYPE") or "") == "NUT_OPERATOR"]
-        self.gear = [g for g in gears if isinstance(g, dict)]
-        for collection in (self.unit, self.ship, self.operator):
-            collection.sort(key=lambda row: _object_id(row.get("m_UnitID")))
-        self.gear.sort(key=lambda row: _object_id(row.get("m_ItemEquipID")))
-        skills, _ = read_table_records(roots, "ab_script_unit_data", "LUA_UNIT_SKILL_TEMPLET.json")
-        self.unit_skills = _group_by(skills, "m_UnitSkillStrID")
-        ship_skills, _ = read_table_records(roots, "ab_script", "LUA_SHIP_SKILL_TEMPLET.json")
-        self.ship_skills = _group_by(ship_skills, "m_ShipSkillStrID")
-        operator_skills, _ = read_table_records(roots, "ab_script_unit_data", "LUA_OPERATOR_SKILL_TEMPLET.json")
-        self.operator_skills_by_str = _group_by(operator_skills, "m_OperSkillStrID")
-        self.operator_skills_by_id = _group_by(operator_skills, "m_OperSkillID")
-        passives, _ = read_table_records(roots, "ab_script_unit_data", "LUA_OPERATOR_RANDOM_PASSIVE_TEMPLET.json")
-        self.operator_passives = _group_by(passives, "m_OprPassiveGroupID")
-        skins, _ = read_table_records(roots, "ab_script", "LUA_SKIN_TEMPLET.json")
-        self.skins = _group_by(skins, "m_SkinEquipUnitID")
-        collections, _ = read_table_records(roots, "ab_script", "LUA_COLLECTION_UNIT_TEMPLET.json")
-        self.collections = _group_by(collections, "m_UnitID")
-        ship_builds, _ = read_table_records(roots, "ab_script", "LUA_SHIP_BUILD_TEMPLET.json")
-        self.ship_builds = _group_by(ship_builds, "m_ShipID")
-        random_stats, _ = read_table_records(roots, "ab_script", "LUA_ITEM_EQUIP_RANDOM_STAT.json")
-        self.random_stats = _group_by(random_stats, "m_StatGroupID")
-        potentials, _ = read_table_records(roots, "ab_script", "LUA_ITEM_EQUIP_POTENTIAL_OPTION.json")
-        self.potentials = _group_by(potentials, "m_PotentialOptionGroupID")
-        set_options, _ = read_table_records(roots, "ab_script_item_templet", "LUA_ITEM_EQUIP_SET_OPTION.json")
-        self.set_options = _index_by(set_options, "m_EquipSetID")
-        stat_info, _ = read_table_records(roots, "ab_script", "LUA_STAT_INFO_TEMPLET.json")
-        self.stat_info = _index_by(stat_info, "Stat_ID")
-
-    def records(self, object_type: str) -> list[dict]:
-        return getattr(self, object_type)
-
-
-def _object_id(value) -> int:
-    try:
-        return int(value or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _load_wiki_index(path: Path) -> dict[str, dict]:
-    if not path.exists():
-        return {}
-    try:
-        rows = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return {}
-    return _index_by(rows if isinstance(rows, list) else [], "id")
-
-
-def summarize(catalog: Catalog, object_type: str, record: dict) -> dict:
-    object_id = _object_id(record.get("m_ItemEquipID") if object_type == "gear" else record.get("m_UnitID"))
-    wiki = catalog.wiki_gears if object_type == "gear" else catalog.wiki_units
-    entry = wiki.get(str(object_id), {})
-    str_id = record.get("m_ItemEquipStrID") if object_type == "gear" else record.get("m_UnitStrID")
-    raw_name = record.get("m_ItemEquipName") if object_type == "gear" else record.get("m_Name")
-    if object_type == "gear":
-        meta = " | ".join(str(p) for p in [record.get("m_NKM_ITEM_GRADE"), f"T{record.get('m_NKM_ITEM_TIER', '?')}", record.get("m_ItemEquipPosition"), record.get("m_EquipUnitStyleType")] if p)
-    else:
-        meta = " | ".join(str(p) for p in [record.get("m_NKM_UNIT_GRADE"), record.get("m_NKM_UNIT_STYLE_TYPE"), record.get("m_NKM_UNIT_ROLE_TYPE"), "Monster" if record.get("m_bMonster") else ""] if p)
-    return {
-        "type": object_type,
-        "id": object_id,
-        "strId": str(str_id or ""),
-        "name": str(entry.get("name") or raw_name or str_id or f"{object_type} {object_id}"),
-        "image": str(entry.get("image") or ""),
-        "meta": meta,
-    }
-
-
-def list_objects(roots: Roots, object_type=None, query: str = "", offset: int = 0, limit: int = 100) -> dict:
-    object_type = normalize_object_type(object_type)
-    catalog = Catalog(roots)
-    needle = str(query or "").strip().lower()
-    all_records = [
-        summarize(catalog, object_type, record)
-        for record in catalog.records(object_type)
-    ]
-    if needle:
-        all_records = [row for row in all_records if needle in " ".join([str(row["id"]), row["name"], row["strId"], row["meta"]]).lower()]
-    offset = max(0, int(offset or 0))
-    limit = max(1, min(250, int(limit or 100)))
-    return {"type": object_type, "total": len(all_records), "offset": offset, "objects": all_records[offset:offset + limit]}
-
-
-def get_object(roots: Roots, object_type: str, object_id) -> dict:
-    object_type = normalize_object_type(object_type)
-    catalog = Catalog(roots)
-    target = _object_id(object_id)
-    record = next((row for row in catalog.records(object_type) if _object_id(row.get("m_ItemEquipID") if object_type == "gear" else row.get("m_UnitID")) == target), None)
-    if record is None:
-        raise DomainError(f"{object_type} was not found: {object_id}", status=404)
-    if object_type == "gear":
-        return _inspect_gear(roots, catalog, record)
-    return _inspect_unit(roots, catalog, object_type, record)
-
-
-def _add(out: list, label, field_name, value, description, source, preview="") -> None:
-    if value is None or value == "" or value == 0 or value == "0":
-        return
-    out.append({"label": label, "field": field_name, "value": value, "description": description, "sourceTable": source, "preview": preview})
-
-
-def _asset_preview(roots: Roots, field_name: str, value: str) -> str:
-    if not value or not str(value).replace("_", "").replace("-", "").isalnum():
-        return ""
-    if field_name == "m_UnitSkillIcon":
-        candidates = [f"Data/StreamingAssets/ab_ui_unit_skill_icon/Sprite/{value}.png", f"Assetbundles/ab_ui_unit_skill_icon/Sprite/{value}.png"]
-    elif field_name == "m_InvenIconName":
-        candidates = [f"Data/StreamingAssets/ab_inven_icon_unit/Texture2D/{value}.png"]
-    elif field_name == "m_FaceCardName":
-        candidates = [f"Data/StreamingAssets/ab_unit_face_card_loc/Texture2D/{value}.png", f"Data/StreamingAssets/ab_unit_face_card/Texture2D/{value}.png"]
-    elif field_name == "m_MiniMapFaceName":
-        candidates = [f"Data/StreamingAssets/ab_unit_mini_map_face/Texture2D/{value}.png"]
-    elif field_name == "m_ItemEquipIconName":
-        candidates = [f"Data/StreamingAssets/ab_inven_icon_item_equip/Texture2D/AB_INVEN_ICON_{value}.png", f"Data/StreamingAssets/ab_inven_icon_item_equip/Texture2D/{value}.png"]
-    else:
-        candidates = []
-    for relative in candidates:
-        for root in roots.asset_dirs:
-            if (root / relative).exists():
-                return relative
-    if field_name not in {"m_SpineIllustName", "m_SpineSDName", "m_SpriteBundleName"}:
-        return ""
-    for prefix in ("Data/StreamingAssets", "Assetbundles"):
-        relative_dir = f"{prefix}/{str(value).lower()}/Texture2D"
-        for root in roots.asset_dirs:
-            directory = root / relative_dir
-            if directory.is_dir():
-                images = sorted(p for p in directory.iterdir() if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp"))
-                if images:
-                    return f"{relative_dir}/{images[0].name}"
-    return ""
-
-
-def _stat_name(catalog: Catalog, stat_type: str) -> str:
-    base = str(stat_type or "").removesuffix("_FACTOR")
-    info = catalog.stat_info.get(base, {})
-    return humanize(info.get("Stat_ID") or base)
-
-
-def _inspect_unit(roots: Roots, catalog: Catalog, object_type: str, record: dict) -> dict:
-    source = record.get("_sourceTable") or "LUA_UNIT_TEMPLET_BASE.json"
-    result = {**summarize(catalog, object_type, record), "ids": [], "stats": _unit_stats(catalog, record)}
-    scalar_ids = [
-        ("Unit ID", "m_UnitID", "Primary numeric identity."),
-        ("Unit string ID", "m_UnitStrID", "Canonical string key."),
-        ("Base unit ID", "m_BaseUnitID", "Links variants and rearms to the base character."),
-        ("Ship group ID", "m_ShipGroupID", "Groups upgrade stages of one ship line."),
-        ("Operator passive group ID", "m_OprPassiveGroupID", "Passive pool this operator rolls."),
-        ("Tactical-update group ID", "m_TacticGroup", "Shared tactical-update group."),
-        ("Team-up ID", "m_TeamUp", "Collection/team affiliation."),
-        ("Name localization ID", "m_Name", "Displayed unit name."),
-        ("Title localization ID", "m_Title", "Displayed title."),
-        ("Description localization ID", "m_UnitDesc", "Unit description."),
-        ("Battle template ID", "m_UnitTempletFileName", "Decoded battle template file."),
-    ]
-    for label, field_name, description in scalar_ids:
-        _add(result["ids"], label, field_name, record.get(field_name), description, source)
-    for field_name, label, description in UNIT_ASSETS:
-        value = record.get(field_name)
-        _add(result["ids"], label, field_name, value, description, source, _asset_preview(roots, field_name, str(value or "")))
-
-    skills = catalog.ship_skills if object_type == "ship" else catalog.operator_skills_by_str if object_type == "operator" else catalog.unit_skills
-    id_field = "m_ShipSkillID" if object_type == "ship" else "m_OperSkillID" if object_type == "operator" else "m_UnitSkillID"
-    icon_field = "m_ShipSkillIcon" if object_type == "ship" else "m_OperSkillIcon" if object_type == "operator" else "m_UnitSkillIcon"
-    for slot in range(1, 5):
-        str_id = record.get(f"m_SkillStrID{slot}")
-        if not str_id:
-            continue
-        _add(result["ids"], f"Skill {slot} string ID", f"m_SkillStrID{slot}", str_id, f"Selects skill slot {slot}.", source)
-        for skill in skills.get(str(str_id), []):
-            _add(result["ids"], f"Skill {slot} numeric ID", id_field, skill.get(id_field), "Numeric skill identity.", "LUA_UNIT_SKILL_TEMPLET.json")
-            _add(result["ids"], f"Skill {slot} icon asset ID", icon_field, skill.get(icon_field), "Selects the skill icon.", "LUA_UNIT_SKILL_TEMPLET.json",
-                 _asset_preview(roots, "m_UnitSkillIcon", str(skill.get(icon_field) or "")))
-
-    for skin in catalog.skins.get(str(record.get("m_UnitID")), []):
-        _add(result["ids"], "Skin ID", "m_SkinID", skin.get("m_SkinID"), "Alternate presentation.", "LUA_SKIN_TEMPLET.json")
-        _add(result["ids"], "Skin string ID", "m_SkinStrID", skin.get("m_SkinStrID"), "Skin string key.", "LUA_SKIN_TEMPLET.json")
-    for collection in catalog.collections.get(str(record.get("m_UnitID")), []):
-        _add(result["ids"], "Collection row ID", "Idx", collection.get("Idx"), "Places this unit in the collection catalog.", "LUA_COLLECTION_UNIT_TEMPLET.json")
-    if object_type == "operator":
-        for passive in catalog.operator_passives.get(str(record.get("m_OprPassiveGroupID")), []):
-            _add(result["ids"], "Passive skill numeric ID", "m_OperSkillID", passive.get("m_OperSkillID"), "A rollable passive.", "LUA_OPERATOR_RANDOM_PASSIVE_TEMPLET.json")
-    if object_type == "ship":
-        for build in catalog.ship_builds.get(str(record.get("m_UnitID")), []):
-            _add(result["ids"], "Ship build ID", "m_ShipID", build.get("m_ShipID"), "Construction recipe.", "LUA_SHIP_BUILD_TEMPLET.json")
-            for slot in range(1, 5):
-                _add(result["ids"], f"Build material {slot} item ID", f"m_ShipBuildMaterialID_{slot}", build.get(f"m_ShipBuildMaterialID_{slot}"), "Build material.", "LUA_SHIP_BUILD_TEMPLET.json")
-    for field_name, label in [
-        ("m_OnRemoveItemID_1", "Dismissal reward item ID 1"),
-        ("m_OnRemoveItemID_2", "Dismissal reward item ID 2"),
-        ("m_OnRemoveItemID_Contract", "Contract-dismissal reward item ID"),
-        ("m_OnExtractItemID_1", "Extraction reward item ID"),
-        ("m_OnExtractItemID_Contract", "Contract extraction item ID"),
-    ]:
-        _add(result["ids"], label, field_name, record.get(field_name), "Item granted on dismissal or extraction.", source)
-    return result
-
-
-def _unit_stats(catalog: Catalog, record: dict) -> list[dict]:
-    stat_data = (record.get("_stat") or {}).get("m_StatData") or {}
-    base = stat_data.get("m_Stat") or {}
-    per_level = stat_data.get("m_StatPerLevel") or {}
-    keys = list(dict.fromkeys([*base.keys(), *per_level.keys()]))
-    return [
-        {
-            "statId": stat_type_value(stat_type),
-            "statType": stat_type,
-            "name": _stat_name(catalog, stat_type),
-            "base": base.get(stat_type),
-            "perLevel": per_level.get(stat_type),
-            "fields": {"base": f"m_StatData.m_Stat.{stat_type}", "perLevel": f"m_StatData.m_StatPerLevel.{stat_type}"},
-        }
-        for stat_type in keys
-    ]
-
-
-def _inspect_gear(roots: Roots, catalog: Catalog, record: dict) -> dict:
-    source = "LUA_ITEM_EQUIP_TEMPLET.json"
-    result = {**summarize(catalog, "gear", record), "ids": [], "stats": [], "gear_stat_ids": []}
-    for label, field_name, description in [
-        ("Gear ID", "m_ItemEquipID", "Primary numeric identity."),
-        ("Gear string ID", "m_ItemEquipStrID", "Canonical string key."),
-        ("Name localization ID", "m_ItemEquipName", "Displayed gear name."),
-        ("Description localization ID", "m_ItemEquipDesc", "Displayed gear description."),
-        ("Random stat group ID 1", "m_StatGroupID", "First tuning substat group."),
-        ("Random stat group ID 2", "m_StatGroupID_2", "Second tuning substat group."),
-        ("Primary potential group ID", "m_PotentialOptionGroupID", "Relic potential pool."),
-        ("Secondary potential group ID", "m_SubPotentialOptionGroupID", "Secondary potential pool."),
-    ]:
-        _add(result["ids"], label, field_name, record.get(field_name), description, source)
-    icon = record.get("m_ItemEquipIconName")
-    _add(result["ids"], "Inventory icon PNG ID", "m_ItemEquipIconName", icon, "Gear icon PNG.", source,
-         _asset_preview(roots, "m_ItemEquipIconName", str(icon or "")))
-    for set_id in _array(record.get("m_SetGroup")):
-        _add(result["ids"], "Allowed set-option ID", "m_SetGroup[]", set_id, "Allows this gear to roll that set bonus.", "LUA_ITEM_EQUIP_SET_OPTION.json")
-    for label, field_name in [
-        ("Dismantle reward item ID 1", "m_OnRemoveItemID_1"),
-        ("Dismantle reward item ID 2", "m_OnRemoveItemID_2"),
-        ("Set reroll material item ID", "m_RandomSetReqItemID"),
-        ("Relic reroll material item ID", "m_RelicRerollReqItemID"),
-        ("Socket 1 unlock item ID", "Socket1_OpenItemID"),
-        ("Socket 2 unlock item ID", "Socket2_OpenItemID"),
-        ("Socket 3 unlock item ID", "Socket3_OpenItemID"),
-    ]:
-        _add(result["ids"], label, field_name, record.get(field_name), "Item consumed or granted by the matching operation.", source)
-    _gear_stats(catalog, result["gear_stat_ids"], record)
-    return result
-
-
-def _array(value) -> list:
-    if isinstance(value, list):
-        return value
-    return [] if value in (None, "") else [value]
-
-
-def _number(value):
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return None
-    return int(number) if number.is_integer() else number
-
-
-def _first_field(record: dict, names: list[str]) -> str:
-    for name in names:
-        if record.get(name) not in (None, ""):
-            return name
-    return ""
-
-
-def _gear_stats(catalog: Catalog, out: list, gear: dict) -> None:
-    stat_type = str(gear.get("STAT_TYPE_1") or "")
-    if stat_type:
-        base = _number(gear.get("STAT_VALUE_1"))
-        per_level = _number(gear.get("STAT_LEVELUP_VALUE_1")) or 0
-        max_level = _number(gear.get("m_MaxEnchantLevel")) or 0
-        out.append({
-            "statId": stat_type_value(stat_type), "statType": stat_type, "name": _stat_name(catalog, stat_type),
-            "slot": "Main", "groupId": None, "min": base, "max": None if base is None else base + per_level * max_level,
-            "sourceTable": "LUA_ITEM_EQUIP_TEMPLET.json",
-        })
-    for field_name, slot in [("m_StatGroupID", "Substat 1"), ("m_StatGroupID_2", "Substat 2")]:
-        group_id = _number(gear.get(field_name))
-        if not group_id:
-            continue
-        for row in catalog.random_stats.get(str(group_id), []):
-            row_type = str(row.get("m_StatType") or "")
-            out.append({
-                "statId": stat_type_value(row_type), "statType": row_type, "name": _stat_name(catalog, row_type),
-                "slot": slot, "groupId": group_id,
-                "min": _number(row.get("m_MinStatValue") if row.get("m_MinStatValue") is not None else row.get("m_MinStatRate")),
-                "max": _number(row.get("m_MaxStatValue") if row.get("m_MaxStatValue") is not None else row.get("m_MaxStatRate")),
-                "sourceTable": "LUA_ITEM_EQUIP_RANDOM_STAT.json",
-            })
-    for field_name, label in [("m_PotentialOptionGroupID", "Primary potential"), ("m_SubPotentialOptionGroupID", "Secondary potential")]:
-        group_id = _number(gear.get(field_name))
-        if not group_id:
-            continue
-        for row in catalog.potentials.get(str(group_id), []):
-            for socket in range(1, 4):
-                min_field = _first_field(row, [f"Socket{socket}_MinStat", f"Socket{socket}_MinStatRate"])
-                max_field = _first_field(row, [f"Socket{socket}_MaxStat", f"Socket{socket}_MaxStatRate"])
-                if not min_field and not max_field:
-                    continue
-                row_type = str(row.get("Socket1_StatType") or "")
-                out.append({
-                    "statId": stat_type_value(row_type), "statType": row_type, "name": _stat_name(catalog, row_type),
-                    "slot": f"{label} | Socket {socket}", "groupId": group_id,
-                    "min": _number(row.get(min_field)) if min_field else None,
-                    "max": _number(row.get(max_field)) if max_field else None,
-                    "sourceTable": "LUA_ITEM_EQUIP_POTENTIAL_OPTION.json",
-                })
-
-
-def find_asset_for_object(roots: Roots, object_type: str, object_id, field_name: str | None = None) -> dict:
-    object_type = normalize_object_type(object_type)
-    catalog = Catalog(roots)
-    target = _object_id(object_id)
-    record = next((row for row in catalog.records(object_type) if _object_id(row.get("m_ItemEquipID") if object_type == "gear" else row.get("m_UnitID")) == target), None)
-    if record is None:
-        raise DomainError(f"{object_type} was not found: {object_id}", status=404)
-    fields = [field_name] if field_name else [name for name, _, _ in UNIT_ASSETS] + ["m_ItemEquipIconName"]
-    assets = []
-    for name in fields:
-        value = record.get(name)
-        if not value:
-            continue
-        assets.append({"field": name, "value": value, "path": _asset_preview(roots, name, str(value))})
-    return {"type": object_type, "id": target, "assets": assets}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `.venv/bin/pytest tests/unit/test_objects.py -v`
-Expected: PASS (4 tests)
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/counterside_mcp/objects.py tests/unit/test_objects.py
-git commit -m "feat: inspect units, ships, operators and gear with asset mappings"
-```
-
----
+- Consumes: `config.Roots`, `tables.read_table_records`, `stats.stat_type_value`, `stats.humanize`, `errors.DomainError`.
+- Produces: `normalize_object_type(value) -> str`; `list_objects(roots, type, query, offset, limit) -> dict`; `get_object(roots, type, object_id) -> dict`; `find_asset_for_object(roots, type, object_id, field=None) -> dict`; `Catalog(roots)` with `records(type) -> list[dict]`.
+
+Port `modules/asset-catalog/index.js` faithfully: same tables, same joins, same
+output keys. Units come from `server-data/units.json` when present (authoritative
+roster), else the four `LUA_UNIT_TEMPLET_BASE*` / `LUA_UNIT_STAT_TEMPLET*` pairs.
+Gears come from `ab_script_item_templet/LUA_ITEM_EQUIP_TEMPLET.json`.
+
+Three things the Node source gets right that a from-scratch port gets wrong:
+
+1. **Most gear columns are optional.** `m_StatGroupID`, `m_StatGroupID_2`,
+   `m_SetGroup`, `m_PotentialOptionGroupID`, `m_SubPotentialOptionGroupID`,
+   `m_RelicRerollReqItemID` and `Socket{1,2,3}_OpenItemID` are present on some
+   rows and absent on others (e.g. `m_SetGroup` on 1675/1688, socket fields on
+   3/1688). Read them per record; do not assume a shape from one row.
+2. **`addId` drops falsy values.** A field that is `null`, `""`, `0` or `"0"` is
+   omitted from `ids` entirely rather than reported with an empty preview.
+3. **Gear icons are named `AB_INVEN_ICON_IQI_EQUIP_<value>.png` on disk**, not
+   the `AB_INVEN_ICON_<value>.png` the upstream candidate list looks for — so
+   upstream resolves 0 of 1688 gear icons. Put the real prefix first and keep
+   the upstream spellings as fallbacks: 1678/1688 resolve.
+
+Implemented in `objects.py`; verified against real data (3561 units, 639 ships,
+43 operators, 1688 gear; 223 sampled inspections, 0 errors).
 
 ### Task 8: Assets — directory, file, text, spine, related
 
@@ -2703,13 +2207,16 @@ from counterside_mcp import server
 print(server.health_report(server.resolve()))
 "
 ```
-Expected: `tableCount` > 0, `roots.asset.exists` true (set `CS_ASSET_VIEWER_ROOT` to `/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets`), `systemsCount` = 26.
+Expected: `tableCount` > 0, `roots.asset.exists` true (set `CS_ASSET_VIEWER_ROOT` to
+`/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets/all` — the `all`
+level is required; the parent holds only `all/` and `manifest.json`, so pointing
+at it makes every asset preview resolve to `""`), `systemsCount` = 29.
 
 - [ ] **Step 3: Exercise the object→asset join on real data**
 
 Run:
 ```bash
-CS_REVIVALSIDE_ROOT=/home/windows/project/RevivalSide CS_ASSET_VIEWER_ROOT=/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets .venv/bin/python -c "
+CS_REVIVALSIDE_ROOT=/home/windows/project/RevivalSide CS_ASSET_VIEWER_ROOT=/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets/all .venv/bin/python -c "
 import json
 from counterside_mcp import server, objects
 roots = server.resolve()
@@ -2722,7 +2229,7 @@ Expected: a JSON object listing `assets` whose `path` values point at real PNGs 
 
 Run:
 ```bash
-CS_REVIVALSIDE_ROOT=/home/windows/project/RevivalSide CS_ASSET_VIEWER_ROOT=/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets .venv/bin/python -c "
+CS_REVIVALSIDE_ROOT=/home/windows/project/RevivalSide CS_ASSET_VIEWER_ROOT=/mnt/c/Users/windows/AppData/Local/RevivalSide/extracted-assets/all .venv/bin/python -c "
 from counterside_mcp import server, tables, assets
 roots = server.resolve()
 listing = assets.list_directory(roots, 'Data/StreamingAssets/ab_inven_icon_unit/Texture2D', '', 0, 5)
